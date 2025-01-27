@@ -7,6 +7,6 @@ spec:
     app: hello-world
   ports:
     - protocol: TCP
-      port: 80 # Service port
-      targetPort: 80 # Container port
+      port: 443 # Service port
+      targetPort: 443 # Container port
   type: ClusterIP

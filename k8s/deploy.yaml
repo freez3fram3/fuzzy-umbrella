@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hello-world-deployment
+  name: worldsbx2b-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hello-world
+      app: worldsbx2b
   template:
     metadata:
       labels:
-        app: hello-world
+        app: worldsbx2b
     spec:
       containers:
-        - name: hello-world
-          image: my-custom-hello-world:latest
+        - name: worldsbx2b
+          image: worldsbx2b:latest
           ports:
-            - containerPort: 80 # container port exposed during build
+            - containerPort: 443 # container port exposed during build
