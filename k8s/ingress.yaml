@@ -1,14 +1,14 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: hello-world-ingress
+  name: worldsbx2b-ingress
   annotations:
     kubernetes.io/ingress.class: nginx
 spec:
   tls:
     - hosts:
         - worldsbx2b.cloudapp.azure.com
-      secretName: hello-world-tls
+      secretName: worldsbx2b-tls
   rules:
     - host: worldsbx2b.cloudapp.azure.com
       http:
@@ -17,6 +17,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: hello-world-service
+                name: worldsbx2b-service
                 port:
                   number: 443
