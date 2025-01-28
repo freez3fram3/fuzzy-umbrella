@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: build and release
 
 on:
   push:
