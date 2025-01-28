@@ -23,6 +23,12 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Download Azure Certificate
+        run: echo "${{ secrets.AZURE_CERTIFICATE }}" > cert.pem
+
+      - name: Azure CLI Login with Certificate
+        run: az login --service-principal --username ${{ secrets.AZURE_CLIENT_ID }} --tenant ${{ secrets.AZURE_TENANT_ID }} --password
+
       - name: Initialize Terraform
         run: terraform init
         working-directory: infra
@@ -97,5 +103,5 @@ jobs:
         working-directory: k8s
 
       - name: Apply Kubernetes manifests
-        run: kubectl apply -f deployment.yml
+        run: kubectl apply -f deploy.yaml -f service.yaml -f ingress.yaml
         working-directory: k8s
