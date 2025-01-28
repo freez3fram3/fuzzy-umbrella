@@ -5,10 +5,6 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
 spec:
-  tls:
-    - hosts:
-        - worldsbx2b.cloudapp.azure.com
-      secretName: worldsbx2b-tls
   rules:
     - host: worldsbx2b.cloudapp.azure.com
       http:
@@ -19,4 +15,4 @@ spec:
               service:
                 name: worldsbx2b-service
                 port:
-                  number: 443
+                  number: 80
