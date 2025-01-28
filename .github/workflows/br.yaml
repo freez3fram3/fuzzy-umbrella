@@ -27,7 +27,7 @@ jobs:
         run: echo "${{ secrets.AZURE_CERTIFICATE }}" > cert.pem
 
       - name: Download Azure Certificate
-        run: echo "${{ secrets.AZURE_CERTIFICATE }}" | base64 --decode > cert.pem
+        run: printf "${{ secrets.AZURE_CERTIFICATE }}" | base64 --decode > cert.pem
 
       - name: Verify Certificate Content
         run: |
