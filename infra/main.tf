@@ -9,26 +9,45 @@ provider "azurerm" {
   }
 }
 
+terraform {
+  backend "azurerm" {
+    resource_group_name  = var.prefix
+    storage_account_name = "sbx2bcloud"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+  }
+}
+
 ### rgs ###
 
-resource "azurerm_resource_group" "k8s_rg" {
-  name     = "${var.prefix}_k8s_rg"
+resource "azurerm_resource_group" "rg" {
+  name     = var.prefix
   location = var.location
+}
+
+### img reg ###
+
+resource "azurerm_container_registry" "ACR_sbx" {
+  name                = "${var.prefix}_acr_sbx"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  sku                 = "Basic"
+  admin_enabled       = true
 }
 
 ### Networking ###
 
 resource "azurerm_virtual_network" "k8s_vnet" {
   name                = "${var.prefix}_k8s_vnet"
-  location            = azurerm_resource_group.k8s_rg.location
-  resource_group_name = azurerm_resource_group.k8s_rg.name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
   address_space       = ["10.1.0.0/16"]
 }
 
 resource "azurerm_public_ip" "k8s_fwpublic_ip" {
   name                = "${var.prefix}-fw-public-ip"
-  location            = azurerm_resource_group.k8s_rg.location
-  resource_group_name = azurerm_resource_group.k8s_rg.name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Static"
 
   tags = {
@@ -39,14 +58,14 @@ resource "azurerm_public_ip" "k8s_fwpublic_ip" {
 resource "azurerm_subnet" "k8s_subnet" {
   name                 = "k8s_subnet"
   virtual_network_name = azurerm_virtual_network.k8s_vnet.name
-  resource_group_name  = azurerm_resource_group.k8s_rg.name
+  resource_group_name  = azurerm_resource_group.rg.name
   address_prefixes     = ["10.1.0.0/22"]
 }
 
 resource "azurerm_route_table" "k8s_rt" {
   name                          = "${var.prefix}_k8s_rt"
-  location                      = azurerm_resource_group.k8s_rg.location
-  resource_group_name           = azurerm_resource_group.k8s_rg.name
+  location                      = azurerm_resource_group.rg.location
+  resource_group_name           = azurerm_resource_group.rg.name
   bgp_route_propagation_enabled = true
 
   route {
@@ -62,6 +81,14 @@ resource "azurerm_subnet_route_table_association" "k8s_rt_subnet_rel" {
   route_table_id = azurerm_route_table.k8s_rt.id
 }
 
+### sec ###
+
+resource "azurerm_network_security_group" "k8s_nsg" {
+  name                = "${var.prefix}_k8s_nsg"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
 resource "azurerm_network_security_rule" "allow_https" {
   name                        = "allow-https"
   priority                    = 127
@@ -72,7 +99,7 @@ resource "azurerm_network_security_rule" "allow_https" {
   destination_port_range      = "443"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = azurerm_resource_group.k8s_rg.name
+  resource_group_name         = azurerm_resource_group.rg.name
   network_security_group_name = azurerm_network_security_group.k8s_nsg.name
 }
 
@@ -80,8 +107,8 @@ resource "azurerm_network_security_rule" "allow_https" {
 
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
   name                = "${var.prefix}_aks_cluster"
-  location            = azurerm_resource_group.k8s_rg.location
-  resource_group_name = azurerm_resource_group.k8s_rg.name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
   dns_prefix          = "${var.prefix}_k8s"
 
   default_node_pool {

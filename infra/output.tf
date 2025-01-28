@@ -21,3 +21,16 @@ output "cluster_ca_certificate" {
 output "host" {
   value = azurerm_kubernetes_cluster.aks_cluster.kube_config.0.host
 }
+
+output "registry_login_server" {
+  value = azurerm_container_registry.ACR_sbx.login_server
+}
+
+output "registry_username" {
+  value = azurerm_container_registry.ACR_sbx.admin_username
+}
+
+output "registry_password" {
+  value     = azurerm_container_registry.ACR_sbx.admin_password
+  sensitive = true
+}
