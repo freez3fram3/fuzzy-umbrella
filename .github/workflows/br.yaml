@@ -24,7 +24,9 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Download Azure Certificate
-        run: echo "${{ secrets.AZURE_CERTIFICATE }}" > cert.pem
+        run: |
+          echo "${{ secrets.AZURE_CERTIFICATE }}" > cert.pem && \
+          echo "${{ secrets.AZURE_TF_SECRET }}" | base64 --decode > cert.pfx
 
       - name: Decode and dump to cert.pem
         run: printf "${{ secrets.AZURE_CERTIFICATE }}" | base64 --decode > cert.pem
@@ -37,7 +39,7 @@ jobs:
         working-directory: infra
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_CLIENT_CERTIFICATE_PATH: ${{ github.workspace }}/cert.pem
+          ARM_CLIENT_CERTIFICATE_PATH: ${{ github.workspace }}/cert.pfx
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
@@ -46,7 +48,7 @@ jobs:
         working-directory: infra
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_CLIENT_CERTIFICATE_PATH: ${{ github.workspace }}/cert.pem
+          ARM_CLIENT_CERTIFICATE_PATH: ${{ github.workspace }}/cert.pfx
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 #      - name: Apply Terraform
