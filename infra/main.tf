@@ -11,7 +11,7 @@ provider "azurerm" {
 
 terraform {
   backend "azurerm" {
-    resource_group_name  = var.prefix
+    resource_group_name  = "Narendra-Candidate"
     storage_account_name = "sbx2bcloud"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
