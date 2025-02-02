@@ -56,14 +56,14 @@ resource "azurerm_public_ip" "k8s_fwpublic_ip" {
 }
 
 resource "azurerm_subnet" "k8s_subnet" {
-  name                 = "k8s_subnet"
+  name                 = "${var.prefix}-k8ssnet"
   virtual_network_name = azurerm_virtual_network.k8s_vnet.name
   resource_group_name  = azurerm_resource_group.rg.name
   address_prefixes     = ["10.1.0.0/22"]
 }
 
 resource "azurerm_route_table" "k8s_rt" {
-  name                          = "${var.prefix}_k8s_rt"
+  name                          = "${var.prefix}-k8srt"
   location                      = azurerm_resource_group.rg.location
   resource_group_name           = azurerm_resource_group.rg.name
   bgp_route_propagation_enabled = true
@@ -84,7 +84,7 @@ resource "azurerm_subnet_route_table_association" "k8s_rt_subnet_rel" {
 ### sec ###
 
 resource "azurerm_network_security_group" "k8s_nsg" {
-  name                = "${var.prefix}_k8s_nsg"
+  name                = "${var.prefix}-k8s-nsg"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
