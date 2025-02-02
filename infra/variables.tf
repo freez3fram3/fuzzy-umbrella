@@ -15,4 +15,5 @@ variable "fwprivate_ip" {
 
 variable "fwpublic_ip" {
   description = "The public IP address for external traffic routing."
+  default     = "192.167.255.250"
 }
