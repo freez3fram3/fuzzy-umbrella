@@ -21,14 +21,14 @@ provider "azurerm" {
 ### rgs ###
 
 resource "azurerm_resource_group" "rg" {
-  name     = var.prefix
+  name     = "${var.prefix}-rg"
   location = var.location
 }
 
 ### img reg ###
 
 resource "azurerm_container_registry" "ACR_sbx" {
-  name                = "${var.prefix}_acr_sbx"
+  name                = "${var.prefix}acr"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "Basic"
@@ -38,14 +38,14 @@ resource "azurerm_container_registry" "ACR_sbx" {
 ### Networking ###
 
 resource "azurerm_virtual_network" "k8s_vnet" {
-  name                = "${var.prefix}_k8s_vnet"
+  name                = "${var.prefix}-k8s-vnet"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   address_space       = ["10.1.0.0/16"]
 }
 
 resource "azurerm_public_ip" "k8s_fwpublic_ip" {
-  name                = "${var.prefix}-fw-public-ip"
+  name                = "${var.prefix}-public-ip"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Static"
