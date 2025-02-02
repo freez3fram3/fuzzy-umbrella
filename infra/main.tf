@@ -106,10 +106,10 @@ resource "azurerm_network_security_rule" "allow_https" {
 ### k8s ###
 
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
-  name                = "${var.prefix}_aks_cluster"
+  name                = "${var.prefix}-k8scluster"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  dns_prefix          = "${var.prefix}_k8s"
+  dns_prefix          = "${var.prefix}-k8s"
 
   default_node_pool {
     name           = "system"
