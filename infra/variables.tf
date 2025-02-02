@@ -1,11 +1,11 @@
 variable "prefix" {
   description = "A prefix used for all resources in this example"
-  default     = "Narendra-Candidate"
+  default     = "Candidate"
 }
 
 variable "location" {
   description = "The region used for this sbx"
-  default     = "east-us"
+  default     = "eastus"
 }
 
 variable "fwprivate_ip" {
