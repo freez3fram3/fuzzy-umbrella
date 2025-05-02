@@ -25,6 +25,11 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
+#resource "azurerm_resource_group" "rg" {
+#  name     = "${var.prefixvm}-rg"
+#  location = var.location
+#}
+
 ### img reg ###
 
 resource "azurerm_container_registry" "ACR_sbx" {
