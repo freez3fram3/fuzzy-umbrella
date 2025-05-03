@@ -1,4 +1,4 @@
-  terraform:
+  terraform-init:
     runs-on: ubuntu-latest
 
     steps:
