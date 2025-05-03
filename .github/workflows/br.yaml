@@ -6,11 +6,11 @@ on:
       - '**'
 
 jobs:
-- template: pipelines/tf-init.yaml
-- template: pipelines/az-login.yaml
+- template: .github/workflows/tf-init.yaml
+- template: .github/workflows/az-login.yaml
 
     steps:
-      - template: pipelines/az-cmds.yaml
+      - template: .github/workflows/az-cmds.yaml
 
       - name: Extract ACR Credentials
         id: acr-creds
