@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - sbx-01
 
 jobs:
 - template: templates/tf-init.yaml
