@@ -1,115 +1,63 @@
-name: Build and release
+name: build and release
 
 on:
   push:
     branches:
-      - main
+      - '**'
 
 jobs:
-  terraform:
+- template: pipelines/tf-init.yaml
+- template: pipelines/az-login.yaml
+
+    steps:
+      - template: pipelines/az-cmds.yaml
+
+      - name: Extract ACR Credentials
+        id: acr-creds
+        run: |
+          echo "::set-output name=login_server::$(terraform output -raw registry_login_server)"
+          echo "::set-output name=username::$(terraform output -raw registry_username)"
+          echo "::set-output name=password::$(terraform output -raw registry_password)"
+
+  docker_build:
     runs-on: ubuntu-latest
+    needs: terraform
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v1
         with:
-          terraform_version: 1.0.0
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ steps.terraform.outputs.acr-creds.outputs.username }}
+          password: ${{ steps.terraform.outputs.acr-creds.outputs.password }}
 
-      - name: Azure Login
-        uses: azure/login@v1
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/worldsbx2b:latest .
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/worldsbx2b:latest
+
+  kubernetes:
+    runs-on: ubuntu-latest
+    needs: docker_build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          version: v1.19.7
 
-      - name: Download Azure Certificate as a pem
-        run: printf "%s" "${{ secrets.AZURE_CERTIFICATE }}" | base64 --decode > cert.pem
+      - name: Get AKS credentials
+        run: az aks get-credentials --resource-group ${terraform.workspace} --name ${terraform.workspace}_aks_cluster
 
-      - name: Download cert as a pfx
-        run: printf "%s" "${{ secrets.AZURE_TF_SECRET }}" | base64 --decode > cert.pfx
+      - name: Substitute ACR Image in Kubernetes Manifest
+        run: |
+          sed -i 's|<ACR_LOGIN_SERVER>|${{ secrets.ACR_LOGIN_SERVER }}|g' k8s-deployment.yml
 
-      - name: Azure CLI Login with Certificate
-        run: az login --service-principal --username ${{ secrets.AZURE_CLIENT_ID }} --tenant ${{ secrets.AZURE_TENANT_ID }} --certificate cert.pem
-
-      - name: Initialize Terraform
-        run: terraform init
-        working-directory: infra
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_CLIENT_CERTIFICATE_PATH: ${{ github.workspace }}/cert.pfx
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-
-      - name: Plan Terraform
-        run: terraform plan
-        working-directory: infra
-        env:
-          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          ARM_CLIENT_CERTIFICATE_PATH: ${{ github.workspace }}/cert.pfx
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-#      - name: Apply Terraform
-#        id: apply
-#        run: terraform apply -auto-approve
-#        working-directory: infra
-#        env:
-#          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-#          ARM_CLIENT_CERTIFICATE_PATH: ${{ github.workspace }}/cert.pem
-#          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-#          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-#
-#      - name: Extract ACR Credentials
-#        id: acr-creds
-#        working-directory: infra
-#        run: |
-#          echo "::set-output name=login_server::$(terraform output -raw registry_login_server)"
-#          echo "::set-output name=username::$(terraform output -raw registry_username)"
-#          echo "::set-output name=password::$(terraform output -raw registry_password)"
-#
-#  docker_build:
-#    runs-on: ubuntu-latest
-#    needs: terraform
-#
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v2
-#
-#      - name: Login to Azure Container Registry
-#        uses: azure/docker-login@v1
-#        with:
-#          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
-#          username: ${{ steps.terraform.outputs.acr-creds.outputs.username }}
-#          password: ${{ steps.terraform.outputs.acr-creds.outputs.password }}
-#
-#      - name: Build and push Docker image
-#        working-directory: worldapplication
-#        run: |
-#          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/worldsbx2b:latest .
-#          docker push ${{ secrets.ACR_LOGIN_SERVER }}/worldsbx2b:latest
-#
-#  kubernetes:
-#    runs-on: ubuntu-latest
-#    needs: docker_build
-#
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v2
-#
-#      - name: Set up kubectl
-#        uses: azure/setup-kubectl@v1
-#        with:
-#          version: v1.19.7
-#
-#      - name: Get AKS credentials
-#        run: az aks get-credentials --resource-group ${terraform.workspace} --name ${terraform.workspace}_aks_cluster
-#
-#      - name: Substitute ACR Image in Kubernetes Manifest
-#        run: |
-#          sed -i 's|<ACR_LOGIN_SERVER>|${{ secrets.ACR_LOGIN_SERVER }}|g' deployment.yml
-#        working-directory: k8s
-#
-#      - name: Apply Kubernetes manifests
-#        run: kubectl apply -f deploy.yaml -f service.yaml -f ingress.yaml
-#        working-directory: k8s
-#
+      - name: Apply Kubernetes manifests
+        run: kubectl apply -f deployment.yml
